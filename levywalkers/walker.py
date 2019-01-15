@@ -67,6 +67,7 @@ class Walker(object):
         :returns: nothing
         :rtype: None
         """
+        # draw walker representation
         stroke(0)
         fill(self.color[0], self.color[1], self.color[2], self.color[3])
         ellipse(self.x, self.y, WALKER_SIZE, WALKER_SIZE)
@@ -79,10 +80,14 @@ class Walker(object):
         :returns: coordinate value
         :rtype: int
         """
+        # select if walker will spawn in left/right or up/down
         side = random.choice([True, False])
         
+        # walker will spawn in left/up: generate his coordinates
         if side:
             return random.randint(self.aSideMin + WALKER_SIZE, self.aSideMax - WALKER_SIZE)
+        
+        # walker will spawn in right/down: generate his coordinates
         else:
             return random.randint(self.bSideMin + WALKER_SIZE, self.bSideMax - WALKER_SIZE) 
         
@@ -94,17 +99,22 @@ class Walker(object):
         :returns: nothing
         :rtype: None
         """
+        # get step size from perlin noise values generator
         xStep = noise(self.perlinTx)
         yStep = noise(self.perlinTy)
         
-        self.perlinTx += 0.01
-        self.perlinTy += 0.01
+        # increase perlin noise time interval
+        self.perlinTx += 0.1
+        self.perlinTy += 0.1
         
+        # compute agent future position
         x = self.x + map(xStep, 0, 1, -1, 1)
         y = self.y + map(yStep, 0, 1, -1, 1)
         
+        # find distance to arena center
         distToCenter = math.sqrt(math.pow(x - ARENA_CENTER, 2) + math.pow(y - ARENA_CENTER, 2))
         
+        # walker is in a valid position: update his coordinates
         if distToCenter > INNER_RADIUS and distToCenter < OUTER_RADIUS:
             self.x = x
             self.y = y

@@ -5,22 +5,16 @@ Simulation main file.
 #
 # IMPORTS
 #
-from arena import Arena
-from walkers import Walkers
+from simulation import Simulation
+
+import simulation
+
 
 #
 # CONSTANTS AND DEFINITIONS
 #
+walkersSimulation = Simulation()
 
-# screen width and height
-WIDTH = 500
-HEIGHT = 500
-
-# create simulation area
-arena = Arena(WIDTH / 2, HEIGHT / 2, 400, WIDTH / 2, HEIGHT / 2, 100)
-
-# create simulation walker
-walkers = Walkers(32, 100, 200, 300, 400)
 
 #
 # CODE
@@ -32,15 +26,12 @@ def draw():
     :returns: nothing
     :rtype: None    
     """
-    # draw simulation arena
-    arena.draw()
+    # pass one time step
+    walkersSimulation.step()
     
-    # update walkers positions
-    walkers.move()
+    # draw current simulation state
+    walkersSimulation.draw()
     
-    # draw walker
-    walkers.draw()
-
 
 def setup():
     """
@@ -50,5 +41,5 @@ def setup():
     :rtype: None
     """
     # set screen size and background color
-    size(WIDTH, HEIGHT)
+    size(simulation.WIDTH, simulation.HEIGHT)
     background(200)

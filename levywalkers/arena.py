@@ -6,7 +6,6 @@ Simulation arena abstraction.
 # CODE
 #
 class Arena(object):
-
     """
     I am an arena abstraction.
     """
