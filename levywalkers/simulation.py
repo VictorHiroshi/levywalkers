@@ -35,7 +35,7 @@ class Simulation(object):
         self.arena = Arena(WIDTH / 2, HEIGHT / 2, 400, WIDTH / 2, HEIGHT / 2, 100)
         
         # simulation agents
-        self.agents = Walkers(32, 100, 200, 300, 400)
+        self.agents = Walkers(16, 100, 200, 300, 400)
         
         # simulation current step
         self.timestep = 0

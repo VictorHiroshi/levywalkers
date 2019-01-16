@@ -89,4 +89,4 @@ class Walkers(object):
         """
         # update each walker position
         for agent in self.agents:
-            agent.move()
+            agent.move(self.agents)

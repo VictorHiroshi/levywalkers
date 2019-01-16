@@ -7,6 +7,7 @@ Simulation walkers.
 #
 import math
 import random
+import uuid
 
 #
 # CONSTANTS AND DEFINITIONS
@@ -41,7 +42,10 @@ class Walker(object):
         
         :param bSideMax: arena B size upper coordinate limitation
         :type  bSideMax: int
-        """    
+        """
+        # walker unique id
+        self.uuid = str(uuid.uuid1())
+                
         # walker color
         self.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), OPACITY)
         
@@ -57,7 +61,7 @@ class Walker(object):
         
         # perlin noise parameters
         self.perlinTx = random.randint(0, 100000)
-        self.perlinTy = random.randint(100000, 10000000000)
+        self.perlinTy = random.randint(100000, 200000)
 
 
     def draw(self):
@@ -67,10 +71,54 @@ class Walker(object):
         :returns: nothing
         :rtype: None
         """
-        # draw walker representation
-        stroke(0)
-        fill(self.color[0], self.color[1], self.color[2], self.color[3])
-        ellipse(self.x, self.y, WALKER_SIZE, WALKER_SIZE)
+        # walker is colliding: draw representation with red border
+        if self.colliding:
+            strokeWeight(2)
+            stroke(255, 0, 0)
+            fill(self.color[0], self.color[1], self.color[2], self.color[3])
+            ellipse(self.x, self.y, WALKER_SIZE, WALKER_SIZE)
+            strokeWeight(1)
+        
+        # walker is not colliding: draw regular representation
+        else:    
+            # draw walker representation
+            stroke(0)
+            fill(self.color[0], self.color[1], self.color[2], self.color[3])
+            ellipse(self.x, self.y, WALKER_SIZE, WALKER_SIZE)
+        
+    
+    def detectCollisions(self, newX, newY, others):
+        """
+        I detect encounters of this walker during simulation.
+        
+        :param newX: walker future X coordinate
+        :type  newX: int
+        
+        :param newY: walker future Y coordinate
+        :type  newY: int
+        
+        :param others: list of walkers in simulation
+        :type  list
+        
+        :retuns: nothing
+        :rtype:  None
+        """
+        # for each walker in simulation
+        for other in others:
+            
+            # walker is not the one being evaluated: compute distance between evaluated and other
+            if self.uuid != other.uuid:
+                distance = math.sqrt(math.pow(newX - other.x, 2) + math.pow(newY - other.y, 2))
+                
+                # distance between them is smaller than walker radius: walkers are encountering each other
+                if distance < WALKER_SIZE:
+                    
+                    # set status as colliding and end computation
+                    self.colliding = True
+                    return
+        
+        # set status as not colliding
+        self.colliding = False 
         
     
     def generateValidCoordinate(self):
@@ -92,9 +140,12 @@ class Walker(object):
             return random.randint(self.bSideMin + WALKER_SIZE, self.bSideMax - WALKER_SIZE) 
         
         
-    def move(self):
+    def move(self, others):
         """
         I update this walker coordinates.
+        
+        :param others: simulation current walkers
+        :type  others: list
         
         :returns: nothing
         :rtype: None
@@ -110,6 +161,9 @@ class Walker(object):
         # compute agent future position
         x = self.x + map(xStep, 0, 1, -1, 1)
         y = self.y + map(yStep, 0, 1, -1, 1)
+        
+        # update collision status
+        self.detectCollisions(x, y, others)
         
         # find distance to arena center
         distToCenter = math.sqrt(math.pow(x - ARENA_CENTER, 2) + math.pow(y - ARENA_CENTER, 2))
