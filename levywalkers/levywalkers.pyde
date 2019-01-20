@@ -1,45 +1,53 @@
-"""
-Simulation main file.
-"""
-
 #
 # IMPORTS
 #
-from simulation import Simulation
-
-import simulation
-
+from arena import Arena
+from agents import Agents
 
 #
 # CONSTANTS AND DEFINITIONS
 #
-walkersSimulation = Simulation()
 
+# simulation parameters
+params = {
+    "simulationStep": 0,
+    "arenaSize": 500,
+    "outerRadius": 400,
+    "innerRadius": 100,
+    
+    "agentsNumber": 12,
+    "agentRadius": 14,
+    "moveTargetChance": 0.001
+}
+
+# simulation arena
+arena = Arena(params)
+
+# simulation agents
+agents = Agents(params)
 
 #
 # CODE
 #
 def draw():
-    """
-    I am the Processing default drawing function.
-
-    :returns: nothing
-    :rtype: None    
-    """
-    # pass one time step
-    walkersSimulation.step()
+    # increase simulation step
+    params['simulationStep'] += 1
     
-    # draw current simulation state
-    walkersSimulation.draw()
+    # draw arena
+    arena.draw()
     
-
+    # draw step info
+    textSize(14)
+    fill(0)
+    text('Step #{}'.format(params['simulationStep']), 10, 20);
+    
+    # move agents
+    agents.move()
+    
+    # draw agents
+    agents.draw()
+    
 def setup():
-    """
-    I am the Processing default setup functon.
-
-    :returns: nothing
-    :rtype: None
-    """
     # set screen size and background color
-    size(simulation.WIDTH, simulation.HEIGHT)
+    size(params['arenaSize'], params['arenaSize'])
     background(200)

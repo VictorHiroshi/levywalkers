@@ -7,46 +7,32 @@ Simulation arena abstraction.
 #
 class Arena(object):
     """
-    I am an arena abstraction.
+    I am a simulated experiment arena
     """
-
-    def __init__(self, outX, outY, outRadius, inX, inY, inRadius):
+    
+    def __init__(self, params):
         """
         I initialize myself.
-
-        :param outX: outer arena center X coordinate
-        :type  outX: int
-
-        :param outY: outer arena center Y coordinate
-        :type  outY: int
-
-        :param outRadius: outer arena radius
-        :type  outRadius: int
-
-        :param inX: inner arena center X coordinate
-        :type  inY: int
-
-        :param inY: inner arena center Y coordinate
-        :type  inY: int
-
-        :param inRadius: inner arena circle radius
-        :type  inRadius: int
+        
+        :param params: simulation parameters
+        :type  params: dict
+        
+        :returns: nothing
+        :rtype: None
         """
-        # outer arena circle parameters
-        self.outX = outX
-        self.outY = outY
-        self.outRadius = outRadius
-
-        # inner arena circle parameters
-        self.inX = inX
-        self.inY = inY
-        self.inRadius = inRadius
-
-
+        # arena center
+        self.center = params['arenaSize'] / 2
+        
+        # inner circle radius
+        self.innerRadius = params['innerRadius']
+        
+        # outer circle radius
+        self.outerRadius = params['outerRadius']
+        
     def draw(self):
         """
-        I draw the simulation arena.
-
+        I draw myself.
+        
         :returns: nothing
         :rtype: None
         """
@@ -56,9 +42,9 @@ class Arena(object):
         # draw outside circle
         stroke(0)
         fill(255)
-        ellipse(self.outX, self.outY, self.outRadius, self.outRadius)
+        ellipse(self.center, self.center, self.outerRadius, self.outerRadius)
 
         # draw inside circle
         stroke(0)
         fill(150)
-        ellipse(self.inX, self.inX, self.inRadius, self.inRadius)
+        ellipse(self.center, self.center, self.innerRadius, self.innerRadius)
