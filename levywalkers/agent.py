@@ -41,7 +41,9 @@ class Agent(object):
         # agent uuid
         self.uuid = str(uuid.uuid1())
         
-        
+        # ticks blocked by other agent
+        self.blockedTime = 0
+
         # agent representation circle color
         self.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 200)
         
@@ -51,6 +53,9 @@ class Agent(object):
         # arena valid boundaries
         self.outerBoundary = (self.simulationParams['outerRadius'] / 2) - (self.radius / 2)
         self.innerBoundary = (self.simulationParams['innerRadius'] / 2) + (self.radius / 2) 
+
+        # initial direction
+        self.direction = PVector(0, 0)
         
         # agent coordinates
         self.coord = self.generateInitialCoordinates(others)
@@ -64,11 +69,9 @@ class Agent(object):
         # agent moving "time"
         self.step = 0
 
-        
-        
-    def detectCollision(self, coord, others):
+    def detectWallCollision(self, coord):
         """
-        I detect if a generated initial coordinate will incur in a collision.
+        I detect if a coordinate will incur in a collision a wall.
         
         :param coord: future coordinate
         :type  coord: PVector
@@ -76,29 +79,44 @@ class Agent(object):
         :param others: other agents in simulation
         :type  others: list
         
-        :returns: collision checking result
-        :rtype: bool
+        :returns: inner/outer wall, None
+        :rtype: wall name
         """
-    
         # arena center
         center = PVector(self.simulationParams['arenaSize'] / 2, self.simulationParams['arenaSize'] / 2)
         
         # compute distance to arena center
         distance = coord.dist(center) 
         
-        if distance > self.outerBoundary or distance < self.innerBoundary:
-            return True
+        if distance > self.outerBoundary:
+            return "outer"
+        if distance < self.innerBoundary:
+            return "inner"
+        return None
         
+    def detectAgentCollision(self, coord, others):
+        """
+        I detect if a coordinate will incur in a collision with another agent.
+        
+        :param coord: future coordinate
+        :type  coord: PVector
+        
+        :param others: other agents in simulation
+        :type  others: list
+        
+        :returns: collided agent
+        :rtype: agent
+        """
         # for every other agent
         for other in others:
             if self.uuid == other.uuid:
                 continue
             # agents are colliding: return true
-            if coord.dist(other.coord) < self.simulationParams['agentRadius'] * 1.8:
-                return True
+            if coord.dist(other.coord) < self.simulationParams['agentRadius']:
+                return other
         
         # return false
-        return False  
+        return None  
         
     def draw(self):
         """
@@ -135,8 +153,7 @@ class Agent(object):
         
                 
         # agent position is out of bounds: guess another initial position
-        while self.detectCollision(coord, others):
-            
+        while self.detectAgentCollision(coord, others) or self.detectWallCollision(coord):
             # guess an initial coordinate
             coord = PVector(random.randint(0, self.simulationParams['arenaSize']), random.randint(0, self.simulationParams['arenaSize']))
             
@@ -167,11 +184,14 @@ class Agent(object):
         while distance > outerBoundary or distance < innerBoundary:
             
             # guess another target coordinate
-            target = PVector(random.randint(0, self.simulationParams['arenaSize']), random.randint(0, self.simulationParams['arenaSize']))
+            target = PVector(random.uniform(0, self.simulationParams['arenaSize']), random.uniform(0, self.simulationParams['arenaSize']))
             
             # compute distance to arena center
             distance = target.dist(center)
         
+        v1 = PVector.sub(target, self.coord)
+        if degrees(PVector.angleBetween(self.direction, v1)) > 45:
+            self.stop()
         # return valid coordinates
         return target
     
@@ -190,7 +210,7 @@ class Agent(object):
             self.direction = PVector.sub(self.target, self.coord)
             self.direction.normalize()
             factor = self.agentParams["drunkenFactor"]
-            oscilation = random.randint(-1 * factor, factor)
+            oscilation = random.uniform(-1 * factor, factor)
             self.direction.rotate(radians(oscilation))
 
         speed = map(
@@ -230,11 +250,20 @@ class Agent(object):
         self.moveTarget()
         
         nextCoord = self.getNextCoordinate()
+
+        collidingWall = self.detectWallCollision(nextCoord)
+        collidingAgent = self.detectAgentCollision(nextCoord, others)
         
-        if self.detectCollision(nextCoord, others):
+        if collidingWall == "inner" or collidingWall == "outer":
             self.stop()
             self.target = self.generateTarget()
+        elif collidingAgent is not None:
+            self.stop()
+            self.blockedTime += 1
+            if self.blockedTime > self.simulationParams["swing"] / 2:
+                self.target = self.generateTarget()
         else:
+            self.blockedTime = 0
             self.coord = nextCoord
         
         

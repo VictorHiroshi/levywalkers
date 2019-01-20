@@ -17,12 +17,12 @@ params = {
     
     "agentsNumber": 12,
     "agentRadius": 14,
-    "moveTargetChance": 0.0001,
+    "moveTargetChance": 0.0005,
     
-    "minSpeedInterval": [95, 97],
-    "maxSpeedInterval": [98, 99],
+    "minSpeedInterval": [95, 98],
+    "maxSpeedInterval": [99, 102],
     "drunkenFactor": [4, 14],
-    "swing": 16
+    "swing": 22
 }
 
 # simulation arena
