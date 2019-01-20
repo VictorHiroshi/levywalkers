@@ -16,12 +16,15 @@ class Agent(object):
     I am a simulation agent abstraction.
     """
     
-    def __init__(self, params, others):
+    def __init__(self, simulationParams, agentParams, others):
         """
         I initialize myself.
         
-        :param params: simulation parameters
-        :type  params: dict
+        :param simulationParams: simulation parameters
+        :type  simulationParams: dict
+        
+        :param agentParams: min and max speed, drunken parameters
+        :type  simulationParams: dict
         
         :param others: other agents already on simulation
         :type  others: list
@@ -30,16 +33,24 @@ class Agent(object):
         :rtype: None
         """
         # simulation parameters
-        self.params = params
+        self.simulationParams = simulationParams
+
+        # agent movement parameters
+        self.agentParams = agentParams
         
         # agent uuid
         self.uuid = str(uuid.uuid1())
+        
         
         # agent representation circle color
         self.color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 200)
         
         # agent representation circle radius
-        self.radius = self.params['agentRadius']
+        self.radius = self.simulationParams['agentRadius']
+        
+        # arena valid boundaries
+        self.outerBoundary = (self.simulationParams['outerRadius'] / 2) - (self.radius / 2)
+        self.innerBoundary = (self.simulationParams['innerRadius'] / 2) + (self.radius / 2) 
         
         # agent coordinates
         self.coord = self.generateInitialCoordinates(others)
@@ -49,9 +60,10 @@ class Agent(object):
         
         # agent speed
         self.velocity = PVector(0, 0)
-        
-        # agent acceleration
-        self.acc = PVector(0, 0)
+
+        # agent moving "time"
+        self.step = 0
+
         
         
     def detectCollision(self, coord, others):
@@ -67,11 +79,22 @@ class Agent(object):
         :returns: collision checking result
         :rtype: bool
         """
+    
+        # arena center
+        center = PVector(self.simulationParams['arenaSize'] / 2, self.simulationParams['arenaSize'] / 2)
+        
+        # compute distance to arena center
+        distance = coord.dist(center) 
+        
+        if distance > self.outerBoundary or distance < self.innerBoundary:
+            return True
+        
         # for every other agent
         for other in others:
-            
+            if self.uuid == other.uuid:
+                continue
             # agents are colliding: return true
-            if coord.dist(other.coord) < self.params['agentRadius']:
+            if coord.dist(other.coord) < self.simulationParams['agentRadius'] * 1.8:
                 return True
         
         # return false
@@ -110,22 +133,13 @@ class Agent(object):
         # agent coordinates (initially invalid)
         coord = PVector(0, 0)
         
-        # arena center
-        center = PVector(self.params['arenaSize'] / 2, self.params['arenaSize'] / 2)
-        
-        # arena valid boundaries
-        outerBoundary = (self.params['outerRadius'] / 2) - (self.radius / 2)
-        innerBoundary = (self.params['innerRadius'] / 2) + (self.radius / 2)        
                 
         # agent position is out of bounds: guess another initial position
-        while distance > outerBoundary or distance < innerBoundary or self.detectCollision(coord, others):
+        while self.detectCollision(coord, others):
             
             # guess an initial coordinate
-            coord = PVector(random.randint(0, self.params['arenaSize']), random.randint(0, self.params['arenaSize']))
+            coord = PVector(random.randint(0, self.simulationParams['arenaSize']), random.randint(0, self.simulationParams['arenaSize']))
             
-            # compute distance to arena center
-            distance = coord.dist(center)
-        
         # return valid coordinates
         return coord
     
@@ -143,26 +157,69 @@ class Agent(object):
         target = PVector(0, 0)
         
         # arena center
-        center = PVector(self.params['arenaSize'] / 2, self.params['arenaSize'] / 2)
+        center = PVector(self.simulationParams['arenaSize'] / 2, self.simulationParams['arenaSize'] / 2)
         
         # arena valid boundaries
-        outerBoundary = (self.params['outerRadius'] / 2) - (self.radius / 2)
-        innerBoundary = (self.params['innerRadius'] / 2) + (self.radius / 2)        
+        outerBoundary = (self.simulationParams['outerRadius'] / 2) - (self.radius / 2)
+        innerBoundary = (self.simulationParams['innerRadius'] / 2) + (self.radius / 2)        
                 
         # agent target is out of bounds: guess another target position
         while distance > outerBoundary or distance < innerBoundary:
             
             # guess another target coordinate
-            target = PVector(random.randint(0, self.params['arenaSize']), random.randint(0, self.params['arenaSize']))
+            target = PVector(random.randint(0, self.simulationParams['arenaSize']), random.randint(0, self.simulationParams['arenaSize']))
             
             # compute distance to arena center
             distance = target.dist(center)
         
         # return valid coordinates
         return target
+    
+    
+    def getNextCoordinate(self):
+        """
+        I calculate this agent next coordinate.
+        
+        :returns: coordinate
+        :rtype: PVector
+        """
+        swing = self.simulationParams["swing"]
+        current_step = self.step % swing
+    
+        if current_step == 0 or not self.direction:
+            self.direction = PVector.sub(self.target, self.coord)
+            self.direction.normalize()
+            factor = self.agentParams["drunkenFactor"]
+            oscilation = random.randint(-1 * factor, factor)
+            self.direction.rotate(radians(oscilation))
+
+        speed = map(
+                        tan(map(current_step, -4, swing, PI / 8, PI / 4)),
+                        0.41, 1,
+                        self.agentParams["minSpeed"], self.agentParams["maxSpeed"] 
+                    )
+
+        self.velocity = self.direction.mult(speed / 100)
+        
+        newCoord = PVector.add(self.coord, self.velocity)
+
+        self.step += 1
+        
+        return newCoord
         
     
-    def move(self):
+    def stop(self):
+        """
+        I stop this agent movement abruptly.
+        
+        :returns: nothing
+        :rtype: none
+        """
+        self.velocity = PVector(0, 0)
+        self.step = 0
+
+    
+    def move(self, others):
         """
         I make this agent give his next step.
         
@@ -172,42 +229,27 @@ class Agent(object):
         # update agent target if so
         self.moveTarget()
         
-        # find unit vector pointing to target
-        direction = PVector.sub(self.target, self.coord)
-        direction.normalize()
+        nextCoord = self.getNextCoordinate()
         
-        # compute accelaration
-        self.acc = direction.mult(0.01)
+        if self.detectCollision(nextCoord, others):
+            self.stop()
+            self.target = self.generateTarget()
+        else:
+            self.coord = nextCoord
         
-        # update velocity
-        self.velocity.add(self.acc)
-        self.velocity.limit(0.8)  
-        
-        # update coordinates
-        newCoord = PVector.add(self.coord, self.velocity)
-        
-        # compute arena physical limitation parameters
-        center = PVector(self.params['arenaSize'] / 2, self.params['arenaSize'] / 2)
-        outerBoundary = (self.params['outerRadius'] / 2) - (self.radius / 2)
-        innerBoundary = (self.params['innerRadius'] / 2) + (self.radius / 2)
-        
-        # next coordinate is valid: update it
-        if newCoord.dist(center) < outerBoundary and newCoord.dist(center) > innerBoundary:
-            self.coord = newCoord
         
     def moveTarget(self):
         """
         I update this agent target coordinate.
-        
+
         :return: nothing
         :rtype: none
-        """
+        """ 
         # draw random chance of changing target coordinates
         moveChance = random.uniform(0, 1)
         
         # should change target: update it
-        if moveChance < self.params['moveTargetChance']:
-            
+        if moveChance < self.simulationParams['moveTargetChance']:
             # update target
             self.target = self.generateTarget()
         

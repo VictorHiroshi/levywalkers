@@ -17,7 +17,12 @@ params = {
     
     "agentsNumber": 12,
     "agentRadius": 14,
-    "moveTargetChance": 0.001
+    "moveTargetChance": 0.0001,
+    
+    "minSpeedInterval": [95, 97],
+    "maxSpeedInterval": [98, 99],
+    "drunkenFactor": [4, 14],
+    "swing": 16
 }
 
 # simulation arena
@@ -40,7 +45,6 @@ def draw():
     textSize(14)
     fill(0)
     text('Step #{}'.format(params['simulationStep']), 10, 20);
-    
     # move agents
     agents.move()
     

@@ -5,6 +5,7 @@ Simulation agents collection.
 #
 # IMPORTS
 #
+from random import randint
 from agent import Agent
 
 #
@@ -33,7 +34,7 @@ class Agents(object):
         
         # simulation agents
         self.agents = self.createAgents(self.number)
-        
+ 
     def createAgents(self, number):
         """
         I create the simulation agents.
@@ -49,11 +50,27 @@ class Agents(object):
         
         # create agents and append to agents list
         for _ in range(self.number):
-            agents.append(Agent(self.params, agents))
+            agentParams = self.randomizeAgentParams()
+            agents.append(Agent(self.params, agentParams, agents))
         
         # return created agents
         return agents
-                
+    
+    def randomizeAgentParams(self):
+        minSpeedInterval = self.params["minSpeedInterval"]
+        maxSpeedInterval = self.params["maxSpeedInterval"]
+        drunkenFactor = self.params["drunkenFactor"]
+        
+        minSpeed = randint(minSpeedInterval[0], minSpeedInterval[1])
+        maxSpeed = randint(maxSpeedInterval[0], maxSpeedInterval[1])
+        drunkenFactor = randint(drunkenFactor[0], drunkenFactor[1])
+
+        return {
+            "minSpeed": minSpeed,
+            "maxSpeed": maxSpeed,
+            "drunkenFactor": drunkenFactor
+        }
+    
     def draw(self):
         """
         I draw all simulation agents.
@@ -74,4 +91,4 @@ class Agents(object):
         """
         # move agents
         for agent in self.agents:
-            agent.move()
+            agent.move(self.agents)
